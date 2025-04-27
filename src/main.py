@@ -896,10 +896,16 @@ class Ui_MainWindow(object):
 
     def checkOuts(self):
         for out in self.outs:
-            if self.game.outs[out]:
-                self.setGreenButton(self.outs[out])
+            if out in ("y2", "y3", "y4", "y5", "y6"):
+                if self.game.outs[out]:
+                    self.setWhiteButton(self.outs[out])
+                else:
+                    self.setGreenButton(self.outs[out])
             else:
-                self.setWhiteButton(self.outs[out])
+                if self.game.outs[out]:
+                    self.setGreenButton(self.outs[out])
+                else:
+                    self.setWhiteButton(self.outs[out])
 
     def checkState(self):
         if self.game.settings["gameStatus"] == GameStatus.READY:
@@ -980,12 +986,18 @@ class Ui_MainWindow(object):
             self.stopRedBlinking()
 
     def btOnClick(self, out: str):
-        self.game.activateOut(out)
-        self.setGreenButton(self.outs[out])
+        if out in ("y2", "y3", "y4", "y5", "y6"):
+            self.game.deactivateOut(out)
+        else:
+            self.game.activateOut(out)
 
     def btOffClick(self, out: str):
-        self.game.deactivateOut(out)
-        self.setWhiteButton(self.outs[out])
+        if out in ("y2", "y3", "y4", "y5", "y6"):
+            self.game.activateOut(out)
+        elif out in ("y8", "y11"):
+            return
+        else:
+            self.game.deactivateOut(out)
 
     def btSkipClick(self, stage: str):
         self.game.activateStage(stage)
