@@ -131,7 +131,26 @@ class Game:
         }
 
     def messageHandler(self, message: str):
-        pass
+        inputName, value = message.split(':')
+        self.inputs[inputName] = bool(int(value))
+        if self.inputs[inputName]:
+            if inputName == "x1" and self.checkStart():
+                self.settings["startEvent"] = True
+            elif inputName == "x2":
+                self.boxScript()
+            elif inputName in ["x3", "x4", "x5", "x6"] and self.checkRoulette():
+                self.rouletteScript()
+            elif inputName in ["x7", "x8", "x9", "x10"] and self.checkMap():
+                self.mapScript()
+            elif inputName == "x11":
+                self.bottleScript()
+            elif inputName == "x12":
+                self.phoneScript()
+            elif inputName == "x13":
+                self.doorScript()
+        else:
+            if inputName == "x1"  and self.checkWin():
+                self.settings["winEvent"] = True
 
     def playMusic(self, name: str):
         track = self.music[name]
@@ -208,6 +227,9 @@ class Game:
         self.timeSettings.initTime()
         self.stopAllMusic()
 
+    def checkStart(self):
+        return not self.settings["doorLock"] and self.settings["waitingStatus"] == WaitingStatus.READY
+
     def startGame(self):
         self.settings["startEvent"] = False
         self.settings["gameStatus"] = GameStatus.LAUNCHED
@@ -234,6 +256,9 @@ class Game:
         self.stopMusic(Track.TRACK1.value)
         self.playMusic(Track.TRACK2.value)
 
+    def checkRoulette(self):
+        return all(self.inputs.get(f"x{i}") for i in range(3, 7))
+
     def rouletteScript(self):
         if self.stages["roulette"]:
             return
@@ -243,6 +268,9 @@ class Game:
             self.tasks["questScript"].start()
         else:
             self.tasks["defaultScriptY2"].start()
+
+    def checkMap(self):
+        return all(self.inputs.get(f"x{i}") for i in range(7, 11))
 
     def mapScript(self):
         if self.stages["map"]:
@@ -290,6 +318,9 @@ class Game:
         self.tasks["blinkY10"].start()
         self.tasks["activateY10"].start()
 
+    def checkWin(self):
+        return all(self.stages.values())
+
     def winScript(self):
         if self.settings["gameStatus"] != GameStatus.LAUNCHED:
             return
@@ -309,15 +340,7 @@ class Game:
         self.tasks["blinkY1"].start()
 
     def checkQuest(self):
-        if not self.stages["roulette"]:
-            return False
-        if not self.stages["map"]:
-            return False
-        if not self.stages["bottle"]:
-            return False
-        if not self.stages["phone"]:
-            return False
-        return True
+        return all(self.stages[key] for key in ("roulette", "map", "bottle", "phone"))
 
     def questScript(self):
         self.pauseMusic(Track.TRACK2.value)
