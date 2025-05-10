@@ -8,7 +8,7 @@ from gpio import PiHandler
 class GameHandler(PiHandler):
     def __init__(self):
         super().__init__()
-        self.client = Client(self.sendInputs)
+        self.client = Client(self.sendInputs, self.messageHandler)
         self.gm = Music()
 
     def messageHandler(self, message: str):
@@ -30,7 +30,7 @@ class GameHandler(PiHandler):
     def sendInputs(self):
         inputs = PiHandler.getInputs()
         for inputName in inputs:
-            self.client.sendMessage(f'{inputName}{int(inputs[inputName])};')
+            self.client.sendMessage(f'{inputName}:{int(inputs[inputName])};')
 
 
 def main():

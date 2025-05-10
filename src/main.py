@@ -37,7 +37,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.setFixedSize(800, 600)
-        pixmap = QPixmap("../img/red.jpg")
+        pixmap = QPixmap("img/red.jpg")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setStyleSheet("font: bold 11.5px;")
         self.centralwidget.setStyleSheet("""
@@ -950,11 +950,11 @@ class Ui_MainWindow(object):
         button.setStyleSheet("")
 
     def setRedSensor(self, sensor: QtWidgets.QLabel):
-        pixmap = QPixmap("../img/red.jpg")
+        pixmap = QPixmap("img/red.jpg")
         sensor.setPixmap(pixmap)
 
     def setGreenSensor(self, sensor: QtWidgets.QLabel):
-        pixmap = QPixmap("../img/green.jpg")
+        pixmap = QPixmap("img/green.jpg")
         sensor.setPixmap(pixmap)
 
     def btInitClick(self):
@@ -1257,7 +1257,7 @@ class Ui_MainWindow(object):
 
 stylesheet = """
     QMainWindow {
-        background-image: url("../img/background.png");
+        background-image: url("img/background.png");
         background-repeat: no-repeat;
         background-position: center;
         background-attachment: fixed;

@@ -23,6 +23,7 @@ class Times(IntEnum):
     T12 = 2
     T13 = 4
     T14 = 2
+    T15 = 2
 
 
 class GameStatus(Enum):
@@ -117,6 +118,7 @@ class Game:
         }
 
         self.tasks = {
+            "startGameScript": SingleTimer(self.startGameScript),
             "questScript": SingleTimer(self.questScript),
             "defaultScriptY2": SingleTimer(lambda: self.defaultScript("y2")),
             "defaultScriptY3": SingleTimer(lambda: self.defaultScript("y3")),
@@ -135,7 +137,7 @@ class Game:
         self.inputs[inputName] = bool(int(value))
         if self.inputs[inputName]:
             if inputName == "x1" and self.checkStart():
-                self.settings["startEvent"] = True
+                self.tasks["startGameScript"].start()
             elif inputName == "x2":
                 self.boxScript()
             elif inputName in ["x3", "x4", "x5", "x6"] and self.checkRoulette():
@@ -151,6 +153,8 @@ class Game:
         else:
             if inputName == "x1"  and self.checkWin():
                 self.settings["winEvent"] = True
+            elif inputName == "x1":
+                self.tasks["startGameScript"].stop()
 
     def playMusic(self, name: str):
         track = self.music[name]
@@ -226,6 +230,11 @@ class Game:
         self.checkState()
         self.timeSettings.initTime()
         self.stopAllMusic()
+
+    def startGameScript(self):
+        sleep(Times.T15.value)
+        if self.checkStart():
+            self.settings["startEvent"] = True
 
     def checkStart(self):
         return not self.settings["doorLock"] and self.settings["waitingStatus"] == WaitingStatus.READY

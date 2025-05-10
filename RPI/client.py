@@ -2,12 +2,13 @@ import socket
 
 
 class Client:
-    def __init__(self, sendInputsMethod):
+    def __init__(self, sendInputsMethod, messageHandler):
         self.server = []
         self.messages = []
         self.HOST = self.getLocalIp()
-        self.PORT = 1116
+        self.PORT = 1115
         self.sendInputsMethod = sendInputsMethod
+        self.handler = messageHandler
 
     def getLocalIp(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -42,7 +43,7 @@ class Client:
                         self.messages.extend(data.split(';')[:-1])
 
                         while self.messages:
-                            self.messageHandler(self.messages.pop(0))
+                            self.messageHandler(self.messages.pop(0), self.handler)
 
             except TimeoutError as e:
                 print(i)
