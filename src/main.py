@@ -37,7 +37,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.setFixedSize(800, 600)
-        pixmap = QPixmap("../img/red.jpg")
+        pixmap = QPixmap("img/red.jpg")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setStyleSheet("font: bold 11.5px;")
         self.centralwidget.setStyleSheet("""
@@ -896,10 +896,16 @@ class Ui_MainWindow(object):
 
     def checkOuts(self):
         for out in self.outs:
-            if self.game.outs[out]:
-                self.setGreenButton(self.outs[out])
+            if out in ("y2", "y3", "y4", "y5", "y6"):
+                if self.game.outs[out]:
+                    self.setWhiteButton(self.outs[out])
+                else:
+                    self.setGreenButton(self.outs[out])
             else:
-                self.setWhiteButton(self.outs[out])
+                if self.game.outs[out]:
+                    self.setGreenButton(self.outs[out])
+                else:
+                    self.setWhiteButton(self.outs[out])
 
     def checkState(self):
         if self.game.settings["gameStatus"] == GameStatus.READY:
@@ -944,11 +950,11 @@ class Ui_MainWindow(object):
         button.setStyleSheet("")
 
     def setRedSensor(self, sensor: QtWidgets.QLabel):
-        pixmap = QPixmap("../img/red.jpg")
+        pixmap = QPixmap("img/red.jpg")
         sensor.setPixmap(pixmap)
 
     def setGreenSensor(self, sensor: QtWidgets.QLabel):
-        pixmap = QPixmap("../img/green.jpg")
+        pixmap = QPixmap("img/green.jpg")
         sensor.setPixmap(pixmap)
 
     def btInitClick(self):
@@ -980,12 +986,18 @@ class Ui_MainWindow(object):
             self.stopRedBlinking()
 
     def btOnClick(self, out: str):
-        self.game.activateOut(out)
-        self.setGreenButton(self.outs[out])
+        if out in ("y2", "y3", "y4", "y5", "y6"):
+            self.game.deactivateOut(out)
+        else:
+            self.game.activateOut(out)
 
     def btOffClick(self, out: str):
-        self.game.deactivateOut(out)
-        self.setWhiteButton(self.outs[out])
+        if out in ("y2", "y3", "y4", "y5", "y6"):
+            self.game.activateOut(out)
+        elif out in ("y8", "y11"):
+            return
+        else:
+            self.game.deactivateOut(out)
 
     def btSkipClick(self, stage: str):
         self.game.activateStage(stage)
@@ -1245,7 +1257,7 @@ class Ui_MainWindow(object):
 
 stylesheet = """
     QMainWindow {
-        background-image: url("../img/background.png");
+        background-image: url("img/background.png");
         background-repeat: no-repeat;
         background-position: center;
         background-attachment: fixed;
