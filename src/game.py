@@ -17,7 +17,7 @@ class Times(IntEnum):
     T6 = 1
     T7 = 3
     T8 = 1
-    T9 = 10
+    T9 = 15
     T10 = 5
     T11 = 1
     T12 = 2
@@ -104,7 +104,8 @@ class Game:
             "defeatEvent": False,
             "waitingStatus": WaitingStatus.NOT_READY,
             "doorLock": False,
-            "volume": 100
+            "volume": 100,
+            "skipStage": False
         }
 
         self.music = {
@@ -118,12 +119,13 @@ class Game:
         }
 
         self.tasks = {
-            "startGameScript": SingleTimer(self.startGameScript),
-            "questScript": SingleTimer(self.questScript),
-            "defaultScriptY2": SingleTimer(lambda: self.defaultScript("y2")),
-            "defaultScriptY3": SingleTimer(lambda: self.defaultScript("y3")),
-            "defaultScriptY4": SingleTimer(lambda: self.defaultScript("y4")),
-            "defaultScriptY5": SingleTimer(lambda: self.defaultScript("y5")),
+            "startGame": SingleTimer(self.startGameScript),
+            "box": SingleTimer(self.boxScript),
+            "roulette": SingleTimer(self.rouletteScript),
+            "map": SingleTimer(self.mapScript),
+            "bottle": SingleTimer(self.bottleScript),
+            "phone": SingleTimer(self.phoneScript),
+            "door": SingleTimer(self.doorScript),
             "activateY10": SingleTimer(lambda: self.activateOut("y10"), Times.T9.value),
             "deactivateY8": SingleTimer(lambda: self.deactivateOut("y8"), Times.T12.value),
             "deactivateY11": SingleTimer(lambda: self.deactivateOut("y11"), Times.T10.value),
@@ -132,29 +134,44 @@ class Game:
             "blinkY2345": Blinker(lambda: self.blinkOuts(["y2","y3","y4","y5"])),
         }
 
+        self.onlineInputsList = [
+            "x1",
+            "x3",
+            "x4",
+            "x5",
+            "x6",
+            "x7",
+            "x8",
+            "x9",
+            "x10",
+        ]
+
     def messageHandler(self, message: str):
         inputName, value = message.split(':')
+        if inputName not in self.inputs.keys() or inputName == "x1" and self.settings["doorLock"]:
+            return
+
         self.inputs[inputName] = bool(int(value))
         if self.inputs[inputName]:
             if inputName == "x1" and self.checkStart():
-                self.tasks["startGameScript"].start()
+                self.tasks["startGame"].start()
             elif inputName == "x2":
-                self.boxScript()
+                self.tasks["box"].start()
             elif inputName in ["x3", "x4", "x5", "x6"] and self.checkRoulette():
-                self.rouletteScript()
+                self.tasks["roulette"].start()
             elif inputName in ["x7", "x8", "x9", "x10"] and self.checkMap():
-                self.mapScript()
+                self.tasks["map"].start()
             elif inputName == "x11":
-                self.bottleScript()
+                self.tasks["bottle"].start()
             elif inputName == "x12":
-                self.phoneScript()
+                self.tasks["phone"].start()
             elif inputName == "x13":
-                self.doorScript()
+                self.tasks["door"].start()
         else:
             if inputName == "x1"  and self.checkWin():
                 self.settings["winEvent"] = True
             elif inputName == "x1":
-                self.tasks["startGameScript"].stop()
+                self.tasks["startGame"].stop()
 
     def playMusic(self, name: str):
         track = self.music[name]
@@ -226,10 +243,15 @@ class Game:
             "phone": False,
             "door": False,
         }
+        if not self.checkMap():
+            self.inputs["map"] = False
+        if not self.checkRoulette():
+            self.inputs["roulette"] = False
         self.deactivateOuts()
         self.checkState()
         self.timeSettings.initTime()
         self.stopAllMusic()
+        self.activateOut("y11")
 
     def startGameScript(self):
         sleep(Times.T15.value)
@@ -239,6 +261,9 @@ class Game:
     def checkStart(self):
         return not self.settings["doorLock"] and self.settings["waitingStatus"] == WaitingStatus.READY
 
+    def checkStartScript(self, scriptName: str):
+       return not self.stages[scriptName] and self.settings["gameStatus"] == GameStatus.LAUNCHED
+
     def startGame(self):
         self.settings["startEvent"] = False
         self.settings["gameStatus"] = GameStatus.LAUNCHED
@@ -246,19 +271,14 @@ class Game:
         self.playMusic(Track.TRACK1.value)
 
     def activateStage(self, stage: str):
-        activationScript = {
-            "box": self.boxScript,
-            "roulette":  self.rouletteScript,
-            "map":  self.mapScript,
-            "bottle":  self.bottleScript,
-            "phone":  self.phoneScript,
-            "door":  self.doorScript,
-        }
-        activationScript[stage]()
+        self.settings["skipStage"] = True
+        self.tasks[stage].start()
 
     def boxScript(self):
-        if self.stages["box"]:
+        if not self.checkStartScript("box"):
             return
+        if self.settings["skipStage"]:
+            self.settings["skipStage"] = False
         self.stages["box"] = True
 
         self.activateOut("y1")
@@ -269,52 +289,73 @@ class Game:
         return all(self.inputs.get(f"x{i}") for i in range(3, 7))
 
     def rouletteScript(self):
-        if self.stages["roulette"]:
+        if not self.checkStartScript("roulette"):
             return
+        if self.settings["skipStage"]:
+            self.settings["skipStage"] = False
+        else:
+            sleep(Times.T2.value)
         self.stages["roulette"] = True
+        self.inputs["roulette"] = True
 
         if self.checkQuest():
-            self.tasks["questScript"].start()
+            self.questScript()
         else:
-            self.tasks["defaultScriptY2"].start()
+            self.defaultScript("y2")
 
     def checkMap(self):
         return all(self.inputs.get(f"x{i}") for i in range(7, 11))
 
     def mapScript(self):
-        if self.stages["map"]:
+        if not self.checkStartScript("map"):
             return
+        if self.settings["skipStage"]:
+            self.settings["skipStage"] = False
+        else:
+            sleep(Times.T5.value)
         self.stages["map"] = True
+        self.inputs["map"] = True
 
         if self.checkQuest():
-            self.tasks["questScript"].start()
+            self.questScript()
         else:
-            self.tasks["defaultScriptY3"].start()
+            self.defaultScript("y3")
 
     def bottleScript(self):
-        if self.stages["bottle"]:
+        if not self.checkStartScript("bottle"):
             return
+        if self.settings["skipStage"]:
+            self.settings["skipStage"] = False
+        else:
+            sleep(Times.T6.value)
         self.stages["bottle"] = True
 
         if self.checkQuest():
-            self.tasks["questScript"].start()
+            self.questScript()
         else:
-            self.tasks["defaultScriptY4"].start()
+            self.defaultScript("y4")
 
     def phoneScript(self):
-        if self.stages["phone"]:
+        if not self.checkStartScript("phone"):
             return
+        if self.settings["skipStage"]:
+            self.settings["skipStage"] = False
+        else:
+            sleep(Times.T7.value)
         self.stages["phone"] = True
 
         if self.checkQuest():
-            self.tasks["questScript"].start()
+            self.questScript()
         else:
-            self.tasks["defaultScriptY5"].start()
+            self.defaultScript("y5")
 
     def doorScript(self):
-        if self.stages["door"]:
+        if not self.checkStartScript("door"):
             return
+        if self.settings["skipStage"]:
+            self.settings["skipStage"] = False
         self.stages["door"] = True
+        self.tasks["blinkY2345"].stop()
         self.stopMusic(Track.TRACK4.value)
         self.playMusic(Track.TRACK2.value)
         self.activateOut("y1")
@@ -361,6 +402,10 @@ class Game:
         sleep(Times.T4.value)
         self.stopMusic(Track.TRACK3.value)
         self.deactivateOut("y8")
+        self.deactivateOut("y2")
+        self.deactivateOut("y3")
+        self.deactivateOut("y4")
+        self.deactivateOut("y5")
         self.tasks["blinkY2345"].start()
         sleep(Times.T13.value)
         self.activateOut("y6")

@@ -33,6 +33,8 @@ class Ui_MainWindow(object):
         self.initRedBlinking()
         self.initGreenBlinking()
         self.initTimer()
+        self.green_pixmap = QPixmap("img/green.jpg")
+        self.red_pixmap = QPixmap("img/red.jpg")
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -890,9 +892,8 @@ class Ui_MainWindow(object):
             if self.game.inputs[inputName]:
                 self.setGreenSensor(self.inputs[inputName])
             else:
-                if inputName[0] != "x" or not init:
-                    continue
-                self.setRedSensor(self.inputs[inputName])
+                if inputName in self.game.onlineInputsList or init:
+                    self.setRedSensor(self.inputs[inputName])
 
     def checkOuts(self):
         for out in self.outs:
@@ -938,10 +939,10 @@ class Ui_MainWindow(object):
         self.quest_status.setText("Квест окончен")
 
     def setGreenButton(self, button: QtWidgets.QPushButton):
-        button.setStyleSheet(button.styleSheet() + "background-color: rgb(0, 255, 0);")
+        button.setStyleSheet("background-color: rgb(0, 255, 0);")
 
     def setRedButton(self, button: QtWidgets.QPushButton):
-        button.setStyleSheet(button.styleSheet() + "background-color: rgb(255, 0, 0);")
+        button.setStyleSheet("background-color: rgb(255, 0, 0);")
 
     def setYellowButton(self, button: QtWidgets.QPushButton):
         button.setStyleSheet("background-color: rgb(255, 255, 0);}")
@@ -950,20 +951,18 @@ class Ui_MainWindow(object):
         button.setStyleSheet("")
 
     def setRedSensor(self, sensor: QtWidgets.QLabel):
-        pixmap = QPixmap("img/red.jpg")
-        sensor.setPixmap(pixmap)
+        sensor.setPixmap(self.red_pixmap)
 
     def setGreenSensor(self, sensor: QtWidgets.QLabel):
-        pixmap = QPixmap("img/green.jpg")
-        sensor.setPixmap(pixmap)
+        sensor.setPixmap(self.green_pixmap)
 
     def btInitClick(self):
         self.stopTimer()
         self.stopGreenBlinking()
         self.stopRedBlinking()
-        self.checkInputs(init=True)
 
         self.game.initGame()
+        self.checkInputs(init=True)
         self.setTime()
         self.checkState()
 
@@ -1097,7 +1096,7 @@ class Ui_MainWindow(object):
         self.sensor_map_text.setText(_translate("MainWindow", "Карта (offline)"))
         self.sensor_Paris_text.setText(_translate("MainWindow", "Париж\n"
                                                                 "(online)"))
-        self.sensor_LA_text.setText(_translate("MainWindow", "Л-Анджелес\n"
+        self.sensor_LA_text.setText(_translate("MainWindow", "Лас-Вегас\n"
                                                              "(online)"))
         self.sensor_Egypt_text.setText(_translate("MainWindow", "Египет\n"
                                                                 "(online)"))
